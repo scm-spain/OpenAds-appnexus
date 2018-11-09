@@ -26,7 +26,9 @@ import AppNexusConnector from '@schibstedspain/openads-appnexus'
 
 const appNexusConnector = AppNexusConnector.init({
   config: {
-    member: 4242
+    pageOpts: {
+        member: 4242
+    }
   }
 })
 
@@ -41,6 +43,26 @@ This connector implements these [Connector API](https://github.com/scm-spain/Ope
 * AdViewable
 * AdLoadable
 * Logger
+
+# Specification
+
+In order to make calls according to the Connector API, you'll need to set up the _specification_ data into the *loadAd* and *refresh* methods like this:
+
+```
+loadAd({
+    id: 'ad-1'
+    specification: {
+        source: 'AppNexusConnector' // the name you've given to your AppNexusConnector instance
+        appnexus: {
+            targetId: 'ad-1',
+            keywords: {...}
+            invCode: '...'
+        }
+        // appnexus is required to take the data and send it to the AST (AppNexus Seller Tag)
+        // It has to contain the data as it's specified in the AST API Reference
+    }
+})
+```
 
 # Build your own module
 All modules to work fine with OpenAds must **implement** at least one interface of type AdLoadable or AdViewable
