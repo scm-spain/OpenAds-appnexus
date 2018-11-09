@@ -77,10 +77,10 @@ export default class AppNexusConnector {
     return Promise.resolve()
       .then(() => this._adRepository.remove({id}))
       .then(() => {
-        if (specification) {
+        if (specification && specification.appnexus) {
           this._astClient.modifyTag({
             targetId: id,
-            data: specification
+            data: specification.appnexus
           })
         }
       })
@@ -91,6 +91,10 @@ export default class AppNexusConnector {
   enableDebug({debug}) {
     this._astClient.debugMode({debug})
     this._loggerProvider.debugMode({debug})
+  }
+
+  get pageOpts() {
+    return this._pageOpts
   }
 }
 const consumer = adRepository => id => status => data =>
