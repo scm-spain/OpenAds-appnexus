@@ -13,96 +13,79 @@ import {
  * @implements {Logger}
  */
 export default class AppNexusConnector {
-  constructor({member, logger, astClient, adRepository, loggerProvider}) {
-    this._member = member
+  constructor({pageOpts, logger, astClient, adRepository, loggerProvider}) {
     this._logger = logger
-    this._astClient = astClient
     this._adRepository = adRepository
     this._loggerProvider = loggerProvider
+    this._astClient = astClient
+    this._pageOpts = pageOpts
+    if (this._pageOpts) {
+      this._astClient.setPageOpts(this._pageOpts)
+    }
   }
 
-  get member() {
-    return this._member
-  }
-
-  display({domElementId}) {
+  display({id}) {
     return Promise.resolve()
-      .then(() => this._astClient.showTag({targetId: domElementId}))
+      .then(() => this._astClient.showTag({targetId: id}))
       .then(null)
   }
 
-  loadAd({domElementId, placement, sizes, segmentation, native}) {
+  loadAd({id, specification = {}} = {}) {
     return Promise.resolve()
-      .then(() => this._adRepository.remove({id: domElementId}))
-      .then(() =>
-        this._astClient.defineTag({
-          member: this._member,
-          targetId: domElementId,
-          invCode: placement,
-          sizes: sizes,
-          keywords: segmentation,
-          native: native
-        })
-      )
+      .then(() => this._adRepository.remove({id}))
+      .then(() => this._astClient.defineTag(specification.appnexus))
       .then(astClient =>
         astClient.onEvent({
           event: AD_AVAILABLE,
-          targetId: domElementId,
-          callback: consumer(this._adRepository)(domElementId)(AD_AVAILABLE)
+          targetId: id,
+          callback: consumer(this._adRepository)(id)(AD_AVAILABLE)
         })
       )
       .then(astClient =>
         astClient.onEvent({
           event: AD_BAD_REQUEST,
-          targetId: domElementId,
-          callback: consumer(this._adRepository)(domElementId)(AD_BAD_REQUEST)
+          targetId: id,
+          callback: consumer(this._adRepository)(id)(AD_BAD_REQUEST)
         })
       )
       .then(astClient =>
         astClient.onEvent({
           event: AD_ERROR,
-          targetId: domElementId,
-          callback: consumer(this._adRepository)(domElementId)(AD_ERROR)
+          targetId: id,
+          callback: consumer(this._adRepository)(id)(AD_ERROR)
         })
       )
       .then(astClient =>
         astClient.onEvent({
           event: AD_NO_BID,
-          targetId: domElementId,
-          callback: consumer(this._adRepository)(domElementId)(AD_NO_BID)
+          targetId: id,
+          callback: consumer(this._adRepository)(id)(AD_NO_BID)
         })
       )
       .then(astClient =>
         astClient.onEvent({
           event: AD_REQUEST_FAILURE,
-          targetId: domElementId,
-          callback: consumer(this._adRepository)(domElementId)(
-            AD_REQUEST_FAILURE
-          )
+          targetId: id,
+          callback: consumer(this._adRepository)(id)(AD_REQUEST_FAILURE)
         })
       )
       .then(astClient => astClient.loadTags())
-      .then(() => this._adRepository.find({id: domElementId}))
+      .then(() => this._adRepository.find({id}))
   }
 
-  refresh({domElementId, placement, sizes, segmentation, native}) {
+  refresh({id, specification}) {
     return Promise.resolve()
-      .then(() => this._adRepository.remove({id: domElementId}))
+      .then(() => this._adRepository.remove({id}))
       .then(() => {
-        let updateData = (placement || sizes || segmentation || native) && {}
-        if (updateData) {
-          if (placement) updateData.invCode = placement
-          if (sizes) updateData.sizes = sizes
-          if (segmentation) updateData.keywords = segmentation
-          if (native) updateData.native = native
+        if (specification) {
           this._astClient.modifyTag({
-            targetId: domElementId,
-            data: updateData
+            targetId: id,
+            data: specification
           })
         }
       })
-      .then(() => this._astClient.refresh([domElementId]))
-      .then(() => this._adRepository.find({id: domElementId}))
+      .then(() => this._astClient.refresh([id]))
+      .then(() => this._adRepository.find({id}))
   }
 
   enableDebug({debug}) {

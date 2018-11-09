@@ -20,6 +20,12 @@ export default class AstClientImpl {
     return this
   }
 
+  setPageOpts(data) {
+    this._logger.debug(this._logger.name, '| setPageOpts | pageOpts:', data)
+    this._apnTag.anq.push(() => this._apnTag.setPageOpts(data))
+    return this
+  }
+
   onEvent({event, targetId, callback}) {
     this._logger.debug(
       this._logger.name,
@@ -32,32 +38,9 @@ export default class AstClientImpl {
     return this
   }
 
-  defineTag({member, targetId, invCode, sizes, keywords, native}) {
-    this._logger.debug(
-      this._logger.name,
-      '| defineTag | member:',
-      member,
-      '| targetId:',
-      targetId,
-      '| invCode:',
-      invCode,
-      '| sizes:',
-      sizes,
-      '| keywords:',
-      keywords,
-      '| native:',
-      native
-    )
-    this._apnTag.anq.push(() =>
-      this._apnTag.defineTag({
-        member,
-        targetId,
-        invCode,
-        sizes,
-        keywords,
-        native
-      })
-    )
+  defineTag(data) {
+    this._logger.debug(this._logger.name, '| defineTag | data:', data)
+    this._apnTag.anq.push(() => this._apnTag.defineTag(data))
     return this
   }
 
