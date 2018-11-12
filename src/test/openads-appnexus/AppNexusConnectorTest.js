@@ -9,6 +9,7 @@ describe('AppNexus Connector', function() {
   })
   const createAstClientMock = () => {
     const mock = {
+      setPageOpts: () => mock,
       onEvent: () => mock,
       defineTag: () => mock,
       loadTags: () => mock,
@@ -31,7 +32,9 @@ describe('AppNexus Connector', function() {
       const loggerProviderMock = createloggerProviderMock()
       const debugModeSpy = sinon.spy(loggerProviderMock, 'debugMode')
       const appNexusConnector = new AppNexusConnector({
-        member: 1000,
+        pageOpts: {
+          member: 1000
+        },
         logger: createLoggerMock(),
         astClient: createAstClientMock(),
         adRepository: createAdRepositoryMock(),
@@ -48,10 +51,35 @@ describe('AppNexus Connector', function() {
       ).to.be.true
     })
   })
+  describe('constructor', () => {
+    it('Should set the pageOptions', () => {
+      const astClientMock = createAstClientMock()
+      const setPageOptsSpy = sinon.spy(astClientMock, 'setPageOpts')
+      const givenPageOpts = {
+        member: 1000
+      }
+      // eslint-disable-next-line no-new
+      new AppNexusConnector({
+        pageOpts: givenPageOpts,
+        logger: createLoggerMock(),
+        astClient: astClientMock,
+        adRepository: createAdRepositoryMock(),
+        loggerProvider: createloggerProviderMock()
+      })
+      expect(setPageOptsSpy.called, 'setPageOpts should have been called').to.be
+        .true
+      expect(
+        setPageOptsSpy.args[0][0],
+        'setPageOpts should have been called'
+      ).to.deep.equal(givenPageOpts)
+    })
+  })
   describe('display method', () => {
     it('Should return a promise', () => {
       const appNexusConnector = new AppNexusConnector({
-        member: 1000,
+        pageOpts: {
+          member: 1000
+        },
         logger: createLoggerMock(),
         astClient: createAstClientMock(),
         adRepository: createAdRepositoryMock(),
@@ -63,7 +91,9 @@ describe('AppNexus Connector', function() {
       const astClientMock = createAstClientMock()
       const showSpy = sinon.spy(astClientMock, 'showTag')
       const appNexusConnector = new AppNexusConnector({
-        member: 1000,
+        pageOpts: {
+          member: 1000
+        },
         logger: createLoggerMock(),
         astClient: astClientMock,
         adRepository: createAdRepositoryMock(),
@@ -72,7 +102,7 @@ describe('AppNexus Connector', function() {
       const givenId = 1
 
       appNexusConnector
-        .display({domElementId: givenId})
+        .display({id: givenId})
         .then(() => {
           expect(showSpy.calledOnce, 'should have called the show method').to.be
             .true
@@ -113,30 +143,27 @@ describe('AppNexus Connector', function() {
         loggerProvider: createloggerProviderMock()
       })
       const givenParameters = {
-        domElementId: 1,
-        placement: 2,
-        sizes: [[3, 4]],
-        segmentation: {a: 5},
-        native: {b: 6}
+        id: 'ad-1',
+        specification: {
+          appnexus: {
+            targetId: 'ad-1',
+            invCode: 'whatever',
+            sizes: [[3, 4]],
+            segmentation: {a: 5},
+            native: {b: 6}
+          }
+        }
       }
 
       appNexusConnector
         .loadAd(givenParameters)
         .then(() => {
-          const expectedDefineTagParameters = {
-            member: appNexusConnector.member,
-            targetId: 1,
-            invCode: 2,
-            sizes: [[3, 4]],
-            keywords: {a: 5},
-            native: {b: 6}
-          }
           expect(defineTagSpy.calledOnce, 'should have defined the tag').to.be
             .true
           expect(
             defineTagSpy.args[0][0],
             'should have defined the tag with valid parameters'
-          ).to.deep.equal(expectedDefineTagParameters)
+          ).to.deep.equal(givenParameters.specification.appnexus)
           expect(
             onEventSpy.callCount,
             'should have registered 5 events'
@@ -150,7 +177,7 @@ describe('AppNexus Connector', function() {
           expect(
             findSpy.args[0][0],
             'should have found the Ad in the repository with valid parameters'
-          ).to.deep.equal({id: givenParameters.domElementId})
+          ).to.deep.equal({id: givenParameters.id})
           done()
         })
         .catch(e => done(e))
@@ -161,18 +188,25 @@ describe('AppNexus Connector', function() {
       })
       const findSpy = sinon.spy(adRepositoryMock, 'find')
       const appNexusConnector = new AppNexusConnector({
-        member: 1000,
+        pageOpts: {
+          member: 1000
+        },
         logger: createLoggerMock(),
         astClient: createAstClientMock(),
         adRepository: adRepositoryMock,
         loggerProvider: createloggerProviderMock()
       })
       const givenParameters = {
-        domElementId: 1,
-        placement: 2,
-        sizes: [[3, 4]],
-        segmentation: {a: 5},
-        native: {b: 6}
+        id: 'ad-1',
+        specification: {
+          appnexus: {
+            targetId: 'ad-1',
+            invCode: 'whatever',
+            sizes: [[3, 4]],
+            segmentation: {a: 5},
+            native: {b: 6}
+          }
+        }
       }
       appNexusConnector
         .loadAd(givenParameters)
@@ -187,7 +221,7 @@ describe('AppNexus Connector', function() {
           expect(
             findSpy.args[0][0],
             'should have found the Ad in the repository with valid parameters'
-          ).to.deep.equal({id: givenParameters.domElementId})
+          ).to.deep.equal({id: givenParameters.id})
           done()
         })
         .catch(e => done(e))
@@ -213,31 +247,33 @@ describe('AppNexus Connector', function() {
       const modifyTagSpy = sinon.spy(astClientMock, 'modifyTag')
       const refreshSpy = sinon.spy(astClientMock, 'refresh')
       const appNexusConnector = new AppNexusConnector({
-        member: 1000,
+        pageOpts: {
+          member: 1000
+        },
         logger: createLoggerMock(),
         astClient: astClientMock,
         adRepository: adRepositoryMock,
         loggerProvider: createloggerProviderMock()
       })
       const givenParameters = {
-        domElementId: 1,
-        placement: 2,
-        sizes: [[3, 4]],
-        segmentation: {a: 5},
-        native: {b: 6}
+        id: 'ad-1',
+        specification: {
+          appnexus: {
+            targetId: 'ad-1',
+            invCode: 'whatever',
+            sizes: [[3, 4]],
+            segmentation: {a: 5},
+            native: {b: 6}
+          }
+        }
       }
 
       appNexusConnector
         .refresh(givenParameters)
         .then(() => {
           const modifyTagExpectedParameters = {
-            targetId: givenParameters.domElementId,
-            data: {
-              invCode: givenParameters.placement,
-              sizes: givenParameters.sizes,
-              keywords: givenParameters.segmentation,
-              native: givenParameters.native
-            }
+            targetId: givenParameters.id,
+            data: givenParameters.specification.appnexus
           }
           expect(modifyTagSpy.calledOnce, 'should have modified the tag').to.be
             .true
@@ -250,7 +286,7 @@ describe('AppNexus Connector', function() {
           expect(
             refreshSpy.args[0][0],
             'should have refreshed the tag with valid parameters'
-          ).to.deep.equal([givenParameters.domElementId])
+          ).to.deep.equal([givenParameters.id])
           expect(
             findSpy.calledOnce,
             'should have found the Ad in the repository'
@@ -258,7 +294,7 @@ describe('AppNexus Connector', function() {
           expect(
             findSpy.args[0][0],
             'should have found the Ad in the repository with valid parameters'
-          ).to.deep.equal({id: givenParameters.domElementId})
+          ).to.deep.equal({id: givenParameters.id})
           done()
         })
         .catch(e => done(e))
@@ -274,17 +310,21 @@ describe('AppNexus Connector', function() {
         loggerProvider: createloggerProviderMock()
       })
       const givenParameters = {
-        domElementId: 1,
-        sizes: [[3, 4]]
+        id: 1,
+        specification: {
+          appnexus: {
+            sizes: [[3, 4]]
+          }
+        }
       }
 
       appNexusConnector
         .refresh(givenParameters)
         .then(() => {
           const modifyTagExpectedParameters = {
-            targetId: givenParameters.domElementId,
+            targetId: givenParameters.id,
             data: {
-              sizes: givenParameters.sizes
+              sizes: givenParameters.specification.appnexus.sizes
             }
           }
           expect(modifyTagSpy.calledOnce, 'should have modified the tag').to.be

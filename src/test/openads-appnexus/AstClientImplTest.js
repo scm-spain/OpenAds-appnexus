@@ -12,6 +12,7 @@ describe('AstClient implementation', function() {
       push: func => func()
     },
     debug: false,
+    setPageOpts: () => null,
     onEvent: () => null,
     defineTag: () => null,
     loadTags: () => null,
@@ -28,35 +29,29 @@ describe('AstClient implementation', function() {
         .true
     })
   })
-  describe('onEvent method', function() {
-    it('should call the apntag onEvent method via anq', function() {
+  describe('setPageOpts method', () => {
+    it('should call the apntag setPageOpts method via anq', function() {
       const loggerMock = createLoggerMock()
       const apnTagMock = createApnTagMock()
-      const onEventSpy = sinon.spy(apnTagMock, 'onEvent')
+      const setPageOptsSpy = sinon.spy(apnTagMock, 'setPageOpts')
       const anqSpy = sinon.spy(apnTagMock.anq, 'push')
       const astClient = new AstClientImpl({
         apnTag: apnTagMock,
         logger: loggerMock
       })
-      const givenParameters = {
-        targetId: 'id',
-        event: 'THE_EVENT',
-        callback: () => null
+      const givenPageOpts = {
+        member: 666
       }
 
-      astClient.onEvent(givenParameters)
+      astClient.setPageOpts(givenPageOpts)
 
-      const expectedUnnamedParameters = [
-        givenParameters.event,
-        givenParameters.targetId,
-        givenParameters.callback
-      ]
       expect(anqSpy.calledOnce, 'anq shoud have been called').to.be.true
-      expect(onEventSpy.calledOnce, 'onEvent shoud have been called').to.be.true
+      expect(setPageOptsSpy.calledOnce, 'setPageOpts shoud have been called').to
+        .be.true
       expect(
-        onEventSpy.args[0],
-        'apntag onEvent should receive the parameters in order'
-      ).to.deep.equal(expectedUnnamedParameters)
+        setPageOptsSpy.args[0][0],
+        'apntag setPageOpts should receive the page options'
+      ).to.deep.equal(givenPageOpts)
     })
   })
   describe('defineTag method', function() {
